@@ -78,7 +78,7 @@ python test_npv_engine.py         # unit test suite
 
 **Uncertainty modelling.** Nine inputs are modelled as probability distributions, not point estimates — Beta for bounded variables like market share and cannibalization rate (right-skewed, calibrated by method of moments to historical telecom-entry cases), Normal for symmetric estimation uncertainty (WACC, ARPU), Lognormal for capex overrun (asymmetric — projects rarely come in under budget).
 
-**Correlation structure.** Four economically-justified correlations are built into a Cholesky-decomposed covariance matrix: TAM growth and cannibalization rate are negatively correlated (ρ=−0.40 — a fast-growing market has new users to absorb, reducing the need to steal share), market share and capex overrun are positively correlated (ρ=+0.30 — serving more subscribers requires more infrastructure spend), and two smaller links round out the structure. **Day 4's robustness testing found this correlation structure has a smaller effect on the headline NPV distribution than initially assumed** (see `correlation_robustness.py`) — disclosed honestly rather than overclaimed.
+**Correlation structure.** Four economically-justified correlations are built into a Cholesky-decomposed covariance matrix: TAM growth and cannibalization rate are negatively correlated (ρ=−0.40 — a fast-growing market has new users to absorb, reducing the need to steal share), market share and capex overrun are positively correlated (ρ=+0.30 — serving more subscribers requires more infrastructure spend), and two smaller links round out the structure. **Robustness testing found this correlation structure has a smaller effect on the headline NPV distribution than initially assumed** (see `correlation_robustness.py`) — disclosed honestly rather than overclaimed.
 
 **The cannibalization mechanic** is the project's core novelty: cannibalization loss is computed segment-by-segment (urban postpaid, urban prepaid, rural prepaid) rather than as one blended number, because switching propensity differs fundamentally by contract type. 85% of total cannibalization cost is concentrated in urban prepaid alone.
 
@@ -106,12 +106,12 @@ Three end-point validation checks against independent post-2016 data:
 - **The ARPU growth assumption is flat**, missing the actual price-war V-shape documented in the backtest.
 - **Cannibalization uses segment-average ARPU** as a proxy for switcher ARPU; actual switchers were likely below-average, which makes the model's cannibalization cost a conservative (upper-bound) estimate — a deliberate bias, not an oversight.
 - **The 18% incumbent ARPU-compression parameter is calibrated to a single historical data point** (Airtel's actual decline), not an independently estimated structural relationship.
-- **Tests were written on Day 4, after the model was substantially built**, not test-first. This is disclosed because it's the honest development history — and the test suite caught a real apparent bug (a non-monotonicity in NPV vs. share capture) that turned out to be the disclosed competitive-response discontinuity, not a new error.
+
 
 ## Bugs found and fixed during development (disclosed for transparency)
 
-1. **Unit conversion error** (Day 2): revenue formula used `÷100` instead of the correct `×1.2` to convert ₹/month × million-subscribers into ₹ Crore — silently understated every revenue figure by 10x for two days. Caught by sanity-checking against Jio's actual Q4 FY18 quarterly revenue disclosure.
-2. **Share-variable wiring bug** (Day 3): the stochastic market-share draw was generated and stored for sensitivity analysis but never actually passed into the NPV calculation — every Monte Carlo scenario silently used a fixed deterministic share value. This meant competitive response never activated across 10,000 "scenarios." Fixed by properly threading the stochastic draw through as a share-scale multiplier.
+1. **Unit conversion error** : revenue formula used `÷100` instead of the correct `×1.2` to convert ₹/month × million-subscribers into ₹ Crore — silently understated every revenue figure by 10x for two days. Caught by sanity-checking against Jio's actual Q4 FY18 quarterly revenue disclosure.
+2. **Share-variable wiring bug** : the stochastic market-share draw was generated and stored for sensitivity analysis but never actually passed into the NPV calculation — every Monte Carlo scenario silently used a fixed deterministic share value. This meant competitive response never activated across 10,000 "scenarios." Fixed by properly threading the stochastic draw through as a share-scale multiplier.
 
 ---
 
